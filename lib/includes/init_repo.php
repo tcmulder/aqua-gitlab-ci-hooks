@@ -7,8 +7,8 @@
     version:    4.0.0
 \*------------------------------------*/
 
-// exit if accessed directly
-if(!defined('ABSPATH')) exit;
+// exit if visited in browser or no arguments passed
+if(!isset($argv)) exit;
 
 log_status("\n\n:: init_repo included");
 // ensure we're working from a base directory

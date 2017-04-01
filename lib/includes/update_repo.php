@@ -7,8 +7,8 @@
     version:    4.0.0
 \*------------------------------------*/
 
-// exit if accessed directly
-if(!defined('ABSPATH')) exit;
+// exit if visited in browser or no arguments passed
+if(!isset($argv)) exit;
 
 log_status("\n\n:: update_repo included");
 // ensure this is a git project

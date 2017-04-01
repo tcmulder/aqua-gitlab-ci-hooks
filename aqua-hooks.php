@@ -12,8 +12,8 @@
     ::Initial Setup
 \*------------------------------------*/
 
-// exit if accessed directly
-if(!defined('ABSPATH')) exit;
+// exit if visited in browser or no arguments passed
+if(!isset($argv)) exit;
 
 // grab the $config configuration array
 require_once 'config.php';
@@ -27,7 +27,6 @@ error_reporting(E_ALL & ~(E_WARNING | E_NOTICE | E_DEPRECATED | E_STRICT));
 ignore_user_abort(true);
 date_default_timezone_set($config['timezone']);
 $dir_root = dirname(__FILE__) . '/';
-
 try {
 
 
@@ -92,7 +91,7 @@ try {
         }
     }
 
-    log_status("\n\n\n\nzen-hooks start :::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]");
+    log_status("\n\n\n\naqua-hooks start :::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]");
 
     /*------------------------------------*\
         ::Initialize Data
@@ -144,7 +143,7 @@ try {
         // $server_version = substr($subdomain, -1, 1);
         // log_status('directory version: '.$server_version);
 
-        $dir_base = $config['root_dir'] . $server . '.'. $config['domain'] . $config['subdomain_dir'];
+        $dir_base = $config['root_dir'] . $server . '.'. $config['domain'] . $config['sub_dir'];
         log_status('directory base: '.$dir_base);
 
         // exit if the server (based on branch prefix) doesn't exist
@@ -158,6 +157,7 @@ try {
         $dir_proj = $dir_client . $proj . '/';
         log_status('project directory: '.$dir_proj);
 
+        // identify where the repo can be cloned from
         $repo = $gitlab->repository->url;
         log_status('repo: '.$repo);
 
@@ -194,51 +194,51 @@ try {
             include_once 'lib/functions/db.php';
             // get the wordpress database credentials
             include_once 'lib/functions/wp_db.php';
-            $wp_db_creds = wp_db($branch, $dir_proj, $server_version);
+            $wp_db_creds = wp_db($dir_proj, $server);
         }
 
 
-    //     /*------------------------------------*\
-    //         ::Run All the Commands
-    //     \*------------------------------------*/
+        /*------------------------------------*\
+            ::Run All the Commands
+        \*------------------------------------*/
 
-    //     // try to initialize the repo
-    //     include_once 'lib/includes/init_repo.php';
-    //     // update the branch
-    //     include_once 'lib/includes/update_repo.php';
+        // try to initialize the repo
+        include_once 'lib/includes/init_repo.php';
+        // update the branch
+        include_once 'lib/includes/update_repo.php';
 
-    //     // for wordpress sites
-    //     if($proj_type == 'wordpress'){
-    //         log_status('is type wordpress');
-    //         // grab all the database helper functions
-    //         include_once 'lib/functions/db.php';
-    //         // get the wordpress database credentials
-    //         include_once 'lib/functions/wp_db.php';
-    //         $wp_db_creds = wp_db($branch, $dir_proj, $server_version);
-    //         // if the database credentials are established
-    //         if($wp_db_creds){
-    //             log_status('database credentials exist');
-    //             // create a database (returns false if it's already there)
-    //             db_create($wp_db_creds);
-    //             // if the database import reports success
-    //             if(db_import($wp_db_creds, $dir_proj . '.db/', $server, $client, $proj)){
-    //                 // re-check siteurl (the first one was for the initial database)
-    //                 $siteurl = wp_siteurl($wp_db_creds);
-    //                 $wp_db_creds['siteurl'] = $siteurl;
-    //                 log_status('siteurl: '.$wp_db_creds['siteurl']);
-    //                 // find and replace a database
-    //                 db_far($wp_db_creds, $server, $server_version, $client, $proj);
-    //             }
-    //         }
-    //     }
+        // for wordpress sites
+        if('wordpress' == $proj_type){
+            log_status('is type wordpress');
+            // grab all the database helper functions
+            include_once 'lib/functions/db.php';
+            // get the wordpress database credentials
+            include_once 'lib/functions/wp_db.php';
+            $wp_db_creds = wp_db($dir_proj, $server);
+            // if the database credentials are established
+            if($wp_db_creds){
+                log_status('database credentials exist');
+                // create a database (returns false if it's already there)
+                db_create($wp_db_creds);
+                // if the database import reports success
+                if(db_import($wp_db_creds, $dir_proj . '.db/', $server, $client, $proj)){
+                    // re-check home url (the first one was for the initial database)
+                    $homeurl = wp_homeurl($wp_db_creds);
+                    $wp_db_creds['homeurl'] = $homeurl;
+                    log_status('home url: '.$wp_db_creds['homeurl']);
+                    // find and replace a database
+                    db_far($wp_db_creds, $server, $client, $proj);
+                }
+            }
+        }
 
-    //     // run garbage collection to keep the repository size manageable
-    //     $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";
-    //     log_status('git garbage collection script running');
-    //     log_exec("$git gc");
-    //     log_status('git garbage collection requested');
+        // run garbage collection to keep the repository size manageable
+        $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";
+        log_status('git garbage collection script running');
+        log_exec("$git gc");
+        log_status('git garbage collection requested');
 
-        log_status("\nzen-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
+        log_status("\naqua-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
     // if data isn't right
     } else {
         // if no data was received from gitlab
@@ -247,5 +247,5 @@ try {
 } catch (Exception $e) {
     //output the log
     error_log(sprintf("%s >> %s", date('Y-m-d H:i:s'), "\n".$e));
-    log_status("\nzen-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
+    log_status("\naqua-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
 }

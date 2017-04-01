@@ -7,16 +7,17 @@
     version:    4.0.0
 \*------------------------------------*/
 
-// exit if accessed directly
-if(!defined('ABSPATH')) exit;
+// exit if visited in browser or no arguments passed
+if(!isset($argv)) exit;
 
 // create a database
 function db_create($db_creds){
+    global $config;
     log_status("\n\n: called");
     log_status('database credentials received');
-    log_status('they are '.str_replace("\n", "\n\t", print_r($db_creds,1)));
+    log_status('they are '.flatten_db_creds($db_creds,1));
     // connect to mysql
-    $link = mysql_connect('localhost', 'root', 'YOUR_PASSWORD');
+    $link = mysql_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
     if($link) {
         log_status('connected to mysql as root');
         // create the database
@@ -26,11 +27,11 @@ function db_create($db_creds){
             log_status('database '.$db_creds['name'].' does not exist');
             mysql_query('CREATE DATABASE IF NOT EXISTS '.$db_creds['name'], $link);
             log_status('ran create database '.$db_creds['name']);
-            mysql_query('GRANT USAGE ON *.* TO '. $db_creds['user'].'@localhost IDENTIFIED BY \''.$db_creds['pass'].'\'', $link);
-            mysql_query('GRANT ALL PRIVILEGES ON '.$db_creds['name'].'.* TO '.$db_creds['user'].'@localhost', $link);
-            log_status('created user '.$db_creds['user'].' with privaleges for '.$db_creds['name']);
-            mysql_query('FLUSH PRIVILEGES', $link);
-            log_status('privileges flushed');
+// mysql_query('GRANT USAGE ON *.* TO '. $config['mysql_user'].'@localhost IDENTIFIED BY \''.$config['mysql_pass'].'\'', $link);
+// mysql_query('GRANT ALL PRIVILEGES ON '.$db_creds['name'].'.* TO '.$config['mysql_user'].'@localhost', $link);
+// log_status('created user '.$config['mysql_user'].' with privaleges for '.$db_creds['name']);
+// mysql_query('FLUSH PRIVILEGES', $link);
+// log_status('privileges flushed');
         } else {
             log_status('database already exists');
             mysql_close($link);
@@ -42,9 +43,10 @@ function db_create($db_creds){
 
 // export (mysqldump) a database
 function db_export($db_creds, $db_dir){
+    global $config;
     log_status("\n\n: db_export: called");
     log_status('database credentials received');
-    log_status('they are '.str_replace("\n", "\n\t", print_r($db_creds,1)));
+    log_status('they are '.flatten_db_creds($db_creds,1));
     log_status('database directory is '.$db_dir);
     // if the /.db/ directory doesn't exist
     if(!file_exists($db_dir)){
@@ -56,14 +58,15 @@ function db_export($db_creds, $db_dir){
     }
     // dump the database
     log_status('export /.db/db.sql');
-    log_exec('/usr/bin/mysqldump -h'.$db_creds['host'].' -u'.$db_creds['user'].' -p\''.$db_creds['pass'].'\' '.$db_creds['name'].' > '.$db_dir .'db.sql');
+    log_exec('/usr/bin/mysqldump -h'.$config['mysql_host'].' -u'.$config['mysql_user'].' -p\''.$config['mysql_pass'].'\' '.$db_creds['name'].' > '.$db_dir .'db.sql');
 }
 
 // import a database
 function db_import($db_creds, $db_dir){
+    global $config;
     log_status("\n\n: db_import: called");
     log_status('db_import: database credentials received');
-    log_status('the credentials are '.str_replace("\n", "\n\t", print_r($db_creds,1)));
+    log_status('the credentials are '.flatten_db_creds($db_creds,1));
     log_status('db_import: database directory is '.$db_dir);
     // variable to store sql dump
     $db_dump = $db_dir.'db.sql';
@@ -72,10 +75,10 @@ function db_import($db_creds, $db_dir){
         log_status('db_import: file exists '.$db_dump);
         // drop the database's tables
         log_status('db_import: drop databases tables');
-        exec('mysqldump -h'.$db_creds['host'].' -u'.$db_creds['user'].' -p\''.$db_creds['pass'].'\' --no-data '.$db_creds['name'].' | grep ^DROP | mysql -h'.$db_creds['host'].' -u'.$db_creds['user'].' -p\''.$db_creds['pass'].'\' '.$db_creds['name']);
+        exec('mysqldump -h'.$config['mysql_host'].' -u'.$config['mysql_user'].' -p\''.$config['mysql_pass'].'\' --no-data '.$db_creds['name'].' | grep ^DROP | mysql -h'.$config['mysql_host'].' -u'.$config['mysql_user'].' -p\''.$config['mysql_pass'].'\' '.$db_creds['name']);
         // import the /.db/db.sql file
         log_status('db_import: import file '.$db_dump);
-        exec('mysql -h'.$db_creds['host'].' -u'.$db_creds['user'].' -p\''.$db_creds['pass'].'\' '.$db_creds['name'].' < '.$db_dump);
+        exec('mysql -h'.$config['mysql_host'].' -u'.$config['mysql_user'].' -p\''.$config['mysql_pass'].'\' '.$db_creds['name'].' < '.$db_dump);
         return true;
     // if there is no /.db/db.sql
     } else {
@@ -86,10 +89,11 @@ function db_import($db_creds, $db_dir){
 }
 
 // find and replace in a database
-function db_far($db_creds, $server, $server_version, $client, $proj) {
+function db_far($db_creds, $server, $client, $proj) {
+    global $config;
     log_status("\n\n: db_far: called");
     log_status('database credentials received');
-    log_status('they are '.str_replace("\n", "\n\t", print_r($db_creds,1)));
+    log_status('they are '.flatten_db_creds($db_creds,1));
     log_status('server is '.$server);
     log_status('client is '.$client);
     log_status('project is '.$proj);
@@ -99,12 +103,12 @@ function db_far($db_creds, $server, $server_version, $client, $proj) {
         // create find and replace command
         $far = 'php lib/functions/far.php ';
         $far .= '\''.$db_creds['name'].'\' ';
-        $far .= '\''.$db_creds['user'].'\' ';
-        $far .= '\''.$db_creds['pass'].'\' ';
-        $far .= '\''.$db_creds['host'].'\' ';
+        $far .= '\''.$config['mysql_user'].'\' ';
+        $far .= '\''.$config['mysql_pass'].'\' ';
+        $far .= '\''.$config['mysql_host'].'\' ';
         $far .= '\''.$db_creds['char'].'\' ';
-        $far .= '\''.preg_replace("(^https?:)", "", $db_creds['siteurl']).'\' '; // protocol-relative url
-        $far .= '\'//'.$server.$server_version.'.zenman.com/sites/'.$client.'/'.$proj.'\'';
+        $far .= '\''.preg_replace("(^https?:)", "", $db_creds['homeurl']).'\' '; // protocol-relative url
+        $far .= '\'//'.$server.'.zenman.com/sites/'.$client.'/'.$proj.'\'';
         //execute find and replace
         $output = shell_exec($far);
         log_status('ran with output: ');
@@ -127,17 +131,15 @@ function db_far($db_creds, $server, $server_version, $client, $proj) {
     }
 }
 
-// get and return the siteurl
-function wp_siteurl($db_creds){
-    log_status("\n\n: wp_siteurl: called");
+// get and return the homeurl
+function wp_homeurl($db_creds){
+    global $config;
+    log_status("\n\n: wp_homeurl: called");
     log_status('database credentials received');
-    log_status('they are '.str_replace("\n", "\n\t", print_r($db_creds,1)));
-
-    // aside: it seems ludicrous to me that it'd be impossible to test a database connection NOT as the
-    // root user without throwing a php error, but I have to do it this way currently or it just fails
+    log_status('they are '.flatten_db_creds($db_creds,1));
 
     // connect as the admin mysql user
-    $link = mysql_connect('localhost', 'root', 'YOUR_PASSWORD');
+    $link = mysql_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
     // if the connection succeeded
     if($link) {
         log_status('connected to mysql as root user');
@@ -146,30 +148,30 @@ function wp_siteurl($db_creds){
         // if the database exists
         if($db) {
             log_status('database '.$db_creds['name'].' found');
-            // close the connection as the administrator
+            // close connection to mysql
             mysql_close($link);
-            // reopen a connection with the database credentials
-            $mysqli = @new mysqli($db_creds['host'], $db_creds['user'], $db_creds['pass'], $db_creds['name']);
-	    if ($mysqli->connect_errno) {
-		    log_status('failed to connect to mysql as user: (' . $mysqli->connect_errno . ') ' . $mysqli->connect_error);
-	    } else {
-		    log_status('connected to '.$db_creds['host'].' '.$db_creds['user'].' '.$db_creds['pass'].' '.$db_creds['name'].' with prefix '.$db_creds['prefix']);
-		    // check the siteurl and return it
-		    $siteurl = $mysqli->query('SELECT option_value FROM '.$db_creds['prefix'].'options WHERE option_name = "siteurl"');
-		    if($siteurl){
-			    $siteurl_val = $siteurl->fetch_object()->option_value;
-			    if($siteurl_val){
-				    log_status('siteurl is "'.$siteurl_val.'"');
-				    return $siteurl_val;
-			    } else {
-				    log_status('siteurl value undetermined');
-				    return false;
-			    }
-		    } else {
-			    log_status('database query for siteurl unsuccessful');
-			    return false;
-		    }
-	    }
+            // reopen a connection with just this database selected
+            $mysqli = @new mysqli($config['mysql_host'], $config['mysql_user'], $config['mysql_pass'], $db_creds['name']);
+            if ($mysqli->connect_errno) {
+                log_status('failed to connect to mysql with root user: (' . $mysqli->connect_errno . ') ' . $mysqli->connect_error);
+            } else {
+                log_status('connected to '.$config['mysql_host'].' '.$config['mysql_user'].' '.$config['mysql_pass'].' '.$db_creds['name'].' with prefix '.$db_creds['prefix']);
+                // check the homeurl and return it
+                $homeurl = $mysqli->query('SELECT option_value FROM '.$db_creds['prefix'].'options WHERE option_name = "home"');
+                if($homeurl){
+                    $homeurl_val = $homeurl->fetch_object()->option_value;
+                    if($homeurl_val){
+                        log_status('home url is "'.$homeurl_val.'"');
+                        return $homeurl_val;
+                    } else {
+                        log_status('home url value undetermined');
+                        return false;
+                    }
+                } else {
+                    log_status('database query for home url unsuccessful');
+                    return false;
+                }
+            }
         }
     // if the connection failed
     } else {
@@ -178,4 +180,15 @@ function wp_siteurl($db_creds){
         return false;
     }
     mysql_close($link);
+}
+
+// flatten db creds for log output
+function flatten_db_creds($db_creds){
+    $creds_line = '';
+    foreach($db_creds as $key => $value){
+        $creds_line .= $key.'='.$value.'/';
+    }
+    $creds_line = substr($creds_line, 0, -1);
+    return $creds_line;
+    // note: use this for tabbed array format: return str_replace("\n", "\n\t", print_r($db_creds,1))
 }

@@ -3,7 +3,7 @@
 /*------------------------------------*\
     ::Aqua Hooks - Controller
     ----------------------------------
-    author:     Tomas Mulder <tomas@zenman.com>
+    author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
     version:    4.0.0
 \*------------------------------------*/

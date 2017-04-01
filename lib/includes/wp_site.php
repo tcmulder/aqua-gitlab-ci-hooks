@@ -16,19 +16,19 @@ log_status("\n\n:: wp_site included");
 if('wordpress' == $proj_type){
     log_status('is type wordpress');
 
-    // grab all the database helper functions
+    // grab all the helpers needed
     include_once 'lib/functions/db_helpers.php';
-    // get the wordpress helpers
     include_once 'lib/functions/wp_helpers.php';
 
-    // get the wordpress database creds and stand it up
-    $wp_db_creds = wp_db_creds($dir_proj, $server);
+    // update the .htaccess file for new path
+    wp_htaccess_update($dir_proj);
+    // update the wp-config.php with new database values
+    wp_update_config($dir_proj);
+    // stand up the wordpress database from mysqldump
     if($wp_db_creds){
         log_status('database credentials exist');
         wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj);
     }
 
-    // update the .htaccess file for new path
-    wp_htaccess_update($dir_proj);
 
 }

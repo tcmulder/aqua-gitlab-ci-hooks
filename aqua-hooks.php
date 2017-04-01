@@ -101,7 +101,7 @@ try {
     log_status('raw json: '.$parsed_input);
     log_status('gitlab data: '.($gitlab ? 'true' : 'false'));
     log_status('gitlab json: '.print_r($gitlab,1));
-    // no need to continue if no data received or it's from an unauthorized source
+    // no need to continue if no data received
     if($gitlab){
 
         // grab all the get data
@@ -187,7 +187,8 @@ try {
             }
         }
 
-        // for wordpress sites
+        // for wordpress sites set up db creds
+        $wp_db_creds = '';
         if('wordpress' == $proj_type){
             log_status('is type wordpress');
             // get all the database helper functions

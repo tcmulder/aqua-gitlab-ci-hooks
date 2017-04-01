@@ -167,3 +167,10 @@ function wp_htaccess_update($dir_proj){
         log_status('no .htaccess exists or is unwritable at '.$htaccess);
     }
 }
+
+// update wp-config.php values to this server
+function wp_update_config($dir_proj){
+    log_status("\n\n:: wp_update_config called");
+    log_status("WP UPDATE NOT COMPLETE");
+    die();
+}

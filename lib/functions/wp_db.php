@@ -7,8 +7,8 @@
     version:    4.0.0
 \*------------------------------------*/
 
-// exit if access isn't from git.zenman.com
-if($_SERVER['REMOTE_ADDR'] != 'YOUR_IP_ADDRESS'){ exit; }
+// exit if accessed directly
+if(!defined('ABSPATH')) exit;
 
 function wp_db($branch, $dir_proj, $server_version){
     log_status("\n\n:: wp_db called");

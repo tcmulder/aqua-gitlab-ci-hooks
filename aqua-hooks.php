@@ -11,6 +11,10 @@
 /*------------------------------------*\
     ::Initial Setup
 \*------------------------------------*/
+
+// exit if accessed directly
+if(!defined('ABSPATH')) exit;
+
 // grab the $config configuration array
 require_once 'config.php';
 
@@ -114,7 +118,7 @@ try {
         } else {
             throw new Exception('$config[\'project\'] does not exist');
         }
-        $proj_type = (isset($config['type']) ? $config['type'] : false);
+        $proj_type = (isset($gitlab->type) ? $gitlab->type : false);
         if($proj_type){
             log_status('project type: '.$proj_type);
         } else {
@@ -157,42 +161,41 @@ try {
         $repo = $gitlab->repository->url;
         log_status('repo: '.$repo);
 
-        // // check the commit sha
-        // $sha_before = $gitlab->before;
-        // $sha_after = $gitlab->after;
-        // $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj"; // run git commands in working directory
-        // //compare the current and after sha values
-        // $sha_cur = substr(shell_exec("$git rev-parse --verify HEAD"), 0, 40);
-        // log_status("the current sha is \"$sha_cur\"");
-        // log_status("the after sha is \"$sha_after\"");
-        // $sha_identical = ($sha_cur == $sha_after ? true : false);
-        // log_status('the current sha and after sha are ' . ($sha_cur == $sha_after ? 'equal' : 'not equal'));
-        // //check for empty after sha value
-        // $sha_zero = ($sha_after == '0000000000000000000000000000000000000000' ? true : false);
-        // log_status('the after sha ' . ($sha_after == '0000000000000000000000000000000000000000' ? 'is empty' : 'is not empty'));
+        // check the commit sha
+        $sha_after = $gitlab->after;
+        $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj"; // run git commands in working directory
+        //compare the current and after sha values
+        $sha_cur = substr(shell_exec("$git rev-parse --verify HEAD"), 0, 40);
+        log_status("the current sha is \"$sha_cur\"");
+        log_status("the after sha is \"$sha_after\"");
+        $sha_identical = ($sha_cur == $sha_after ? true : false);
+        log_status('the current sha and after sha are ' . ($sha_cur == $sha_after ? 'equal' : 'not equal'));
+        //check for empty after sha value
+        $sha_zero = ($sha_after == '0000000000000000000000000000000000000000' ? true : false);
+        log_status('the after sha ' . ($sha_after == '0000000000000000000000000000000000000000' ? 'is empty' : 'is not empty'));
 
-        // // if pull of no specific branch was requested
-        // if(!$pull_specific){
-        //     log_status('no specific commit to pull');
-        //     // if the current and after commit are the same or the after sha is empty
-        //     if($sha_cur == $sha_after) {
-        //         throw new Exception('Current and requested commits are identical');
-        //     } elseif($sha_after == '0000000000000000000000000000000000000000'){
-        //         throw new Exception('The new commit is empty');
-        //     } else {
-        //         log_status('requested commit is new');
-        //     }
-        // }
+        // if pull of no specific branch was requested
+        if(!$pull_specific){
+            log_status('no specific commit to pull');
+            // if the current and after commit are the same or the after sha is empty
+            if($sha_cur == $sha_after) {
+                throw new Exception('Current and requested commits are identical');
+            } elseif($sha_after == '0000000000000000000000000000000000000000'){
+                throw new Exception('The new commit is empty');
+            } else {
+                log_status('requested commit is new');
+            }
+        }
 
-        // // for wordpress sites
-        // if($proj_type == 'wordpress'){
-        //     log_status('is type wordpress');
-        //     // get all the database helper functions
-        //     include_once 'lib/functions/db.php';
-        //     // get the wordpress database credentials
-        //     include_once 'lib/functions/wp_db.php';
-        //     $wp_db_creds = wp_db($branch, $dir_proj, $server_version);
-        // }
+        // for wordpress sites
+        if('wordpress' == $proj_type){
+            log_status('is type wordpress');
+            // get all the database helper functions
+            include_once 'lib/functions/db.php';
+            // get the wordpress database credentials
+            include_once 'lib/functions/wp_db.php';
+            $wp_db_creds = wp_db($branch, $dir_proj, $server_version);
+        }
 
 
     //     /*------------------------------------*\

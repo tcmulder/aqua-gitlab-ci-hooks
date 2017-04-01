@@ -7,8 +7,8 @@
     version:    4.0.0
 \*------------------------------------*/
 
-// exit if access isn't from git.zenman.com
-if($_SERVER['REMOTE_ADDR'] != 'YOUR_IP_ADDRESS'){ exit; }
+// exit if accessed directly
+if(!defined('ABSPATH')) exit;
 
 // create a database
 function db_create($db_creds){

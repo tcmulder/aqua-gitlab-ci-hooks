@@ -155,7 +155,7 @@ try {
         log_status('project directory: '.$dir_proj);
 
         $repo = $gitlab->repository->url;
-        log_status('repo: git@gitlab.com:'.$repo.'.git');
+        log_status('repo: '.$repo);
 
         // // check the commit sha
         // $sha_before = $gitlab->before;

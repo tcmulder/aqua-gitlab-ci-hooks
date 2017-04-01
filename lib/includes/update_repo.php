@@ -30,7 +30,7 @@ if(file_exists($dir_proj . '.git')){
     if($proj_type == 'wp'){
         log_status('is type wordpress');
         // include the database scripts
-        include_once 'lib/functions/db.php';
+        include_once 'lib/functions/db_helpers.php';
         // dump the database for the automated commit
         db_export($wp_db_creds, $dir_proj . '.db/');
     }

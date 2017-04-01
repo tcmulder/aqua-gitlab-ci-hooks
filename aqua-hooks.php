@@ -191,10 +191,10 @@ try {
         if('wordpress' == $proj_type){
             log_status('is type wordpress');
             // get all the database helper functions
-            include_once 'lib/functions/db.php';
+            include_once 'lib/functions/db_helpers.php';
             // get the wordpress database credentials
-            include_once 'lib/functions/wp_db.php';
-            $wp_db_creds = wp_db($dir_proj, $server);
+            include_once 'lib/functions/wp_helpers.php';
+            $wp_db_creds = wp_db_creds($dir_proj, $server);
         }
 
 
@@ -202,35 +202,12 @@ try {
             ::Run All the Commands
         \*------------------------------------*/
 
-        // try to initialize the repo
+        // try to initialize the repo if it needs to
         include_once 'lib/includes/init_repo.php';
         // update the branch
         include_once 'lib/includes/update_repo.php';
-
-        // for wordpress sites
-        if('wordpress' == $proj_type){
-            log_status('is type wordpress');
-            // grab all the database helper functions
-            include_once 'lib/functions/db.php';
-            // get the wordpress database credentials
-            include_once 'lib/functions/wp_db.php';
-            $wp_db_creds = wp_db($dir_proj, $server);
-            // if the database credentials are established
-            if($wp_db_creds){
-                log_status('database credentials exist');
-                // create a database (returns false if it's already there)
-                db_create($wp_db_creds);
-                // if the database import reports success
-                if(db_import($wp_db_creds, $dir_proj . '.db/', $server, $client, $proj)){
-                    // re-check home url (the first one was for the initial database)
-                    $homeurl = wp_homeurl($wp_db_creds);
-                    $wp_db_creds['homeurl'] = $homeurl;
-                    log_status('home url: '.$wp_db_creds['homeurl']);
-                    // find and replace a database
-                    db_far($wp_db_creds, $server, $client, $proj);
-                }
-            }
-        }
+        // try to handle wp sites
+        include_once 'lib/includes/wp_site.php';
 
         // run garbage collection to keep the repository size manageable
         $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";

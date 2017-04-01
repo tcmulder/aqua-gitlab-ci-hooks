@@ -107,8 +107,9 @@ function db_far($db_creds, $server, $client, $proj) {
         $far .= '\''.$config['mysql_pass'].'\' ';
         $far .= '\''.$config['mysql_host'].'\' ';
         $far .= '\''.$db_creds['char'].'\' ';
-        $far .= '\''.preg_replace("(^https?:)", "", $db_creds['homeurl']).'\' '; // protocol-relative url
-        $far .= '\'//'.$server.'.zenman.com/sites/'.$client.'/'.$proj.'\'';
+        $far .= '\''.preg_replace("(^https?:)", "", $db_creds['home_url']).'\' '; // protocol-relative url
+        $far .= '\'//'.$server.'.'.$config['base_url'].'/'.$client.'/'.$proj.'\'';
+
         //execute find and replace
         $output = shell_exec($far);
         log_status('ran with output: ');
@@ -131,10 +132,10 @@ function db_far($db_creds, $server, $client, $proj) {
     }
 }
 
-// get and return the homeurl
-function wp_homeurl($db_creds){
+// get and return the home_url
+function wp_home_url($db_creds){
     global $config;
-    log_status("\n\n: wp_homeurl: called");
+    log_status("\n\n: wp_home_url: called");
     log_status('database credentials received');
     log_status('they are '.flatten_db_creds($db_creds,1));
 
@@ -156,13 +157,13 @@ function wp_homeurl($db_creds){
                 log_status('failed to connect to mysql with root user: (' . $mysqli->connect_errno . ') ' . $mysqli->connect_error);
             } else {
                 log_status('connected to '.$config['mysql_host'].' '.$config['mysql_user'].' '.$config['mysql_pass'].' '.$db_creds['name'].' with prefix '.$db_creds['prefix']);
-                // check the homeurl and return it
-                $homeurl = $mysqli->query('SELECT option_value FROM '.$db_creds['prefix'].'options WHERE option_name = "home"');
-                if($homeurl){
-                    $homeurl_val = $homeurl->fetch_object()->option_value;
-                    if($homeurl_val){
-                        log_status('home url is "'.$homeurl_val.'"');
-                        return $homeurl_val;
+                // check the home_url and return it
+                $home_url = $mysqli->query('SELECT option_value FROM '.$db_creds['prefix'].'options WHERE option_name = "home"');
+                if($home_url){
+                    $home_url_val = $home_url->fetch_object()->option_value;
+                    if($home_url_val){
+                        log_status('home url is "'.$home_url_val.'"');
+                        return $home_url_val;
                     } else {
                         log_status('home url value undetermined');
                         return false;

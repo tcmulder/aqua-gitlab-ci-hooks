@@ -1,6 +1,6 @@
 <?php
 /*------------------------------------*\
-    ::Aqua Hooks - WordPress Database Functions
+    ::Aqua Hooks - WordPress Helpers
     ----------------------------------
     author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
@@ -10,9 +10,10 @@
 // exit if visited in browser or no arguments passed
 if(!isset($argv)) exit;
 
-function wp_db($dir_proj, $server){
+// return db creds from wp-config.php
+function wp_db_creds($dir_proj, $server){
     global $config;
-    log_status("\n\n:: wp_db called");
+    log_status("\n\n:: wp_db_creds called");
     log_status('project directory is '.$dir_proj);
     // variable to store wordpress database credentials
     $wp_db_creds = null;
@@ -80,9 +81,9 @@ function wp_db($dir_proj, $server){
             preg_match_all('/\$table_prefix\s+= \'(.+)\'/', $file_content, $db_prefix);
             $wp_db_creds['prefix'] = $db_prefix[1][0];
             // set home url
-            $homeurl = wp_homeurl($wp_db_creds);
-            if($homeurl){
-                $wp_db_creds['homeurl'] = $homeurl;
+            $home_url = wp_home_url($wp_db_creds);
+            if($home_url){
+                $wp_db_creds['home_url'] = $home_url;
             }
             log_status('resulting creds ');
             log_status(flatten_db_creds($wp_db_creds));
@@ -93,7 +94,7 @@ function wp_db($dir_proj, $server){
             log_status('they are '.flatten_db_creds($wp_db_creds));
             return $wp_db_creds;
         // if most credentials were generated (no home url)
-        } elseif(!isset($wp_db_creds['homeurl']) && $wp_db_creds){
+        } elseif(!isset($wp_db_creds['home_url']) && $wp_db_creds){
             log_status('return database credentials without home url');
             log_status('credentials are "'.flatten_db_creds($wp_db_creds).'"');
             return $wp_db_creds;
@@ -104,5 +105,65 @@ function wp_db($dir_proj, $server){
         }
     } else {
         log_status('no config file found');
+    }
+}
+
+// stand up a wp database
+function wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj){
+    log_status("\n\n:: wp_db_standup called");
+    // create a new database (returns false if it's already there and will use existing one)
+    db_create($wp_db_creds);
+    // import the database and store boolean success
+    $import_success = db_import($wp_db_creds, $dir_proj . '.db/', $server, $client, $proj);
+    // if the database import reports success
+    if($import_success){
+        // re-check home url (the first one was for the initial database)
+        $home_url = wp_home_url($wp_db_creds);
+        $wp_db_creds['home_url'] = $home_url;
+        log_status('home url: '.$wp_db_creds['home_url']);
+        // find and replace a database
+        db_far($wp_db_creds, $server, $client, $proj);
+    }
+}
+
+// update .htaccess path
+function wp_htaccess_update($dir_proj){
+    log_status("\n\n:: wp_htaccess_update called");
+    // find the file
+    $htaccess = $dir_proj.'.htaccess';
+    // if it's there and we can edit it
+    if(file_exists($htaccess) && is_file($htaccess) && is_writable($htaccess)){
+        global $config;
+        log_status('root .htaccess exists at '.$htaccess);
+        // open up the file and copy contents
+        $file = fopen($htaccess, "r");
+        $file_content = fread($file, filesize($htaccess));
+        fclose($file);
+
+        // create the new file text for base
+        $pattern = '/(^\s*RewriteBase)\s+(\/+\S*\s*)$/m';
+        $replace = " # replaced via aqua-hooks deployment script:\n";
+        $replace .= "$1 /".$config['client']."/".$config['project']."/";
+        $file_content = preg_replace($pattern, $replace, $file_content);
+
+        // create new file text for rewrite rule
+        $pattern = '/(^\s*RewriteRule\s*\.)\s*(\S*\/index.php)\s*(\[\s*L\s*\]\s*)$/m';
+        $replace = " # replaced via aqua-hooks deployment script:\n";
+        $replace .= "$1 /".$config['client']."/".$config['project']."/index.php $3";
+        $file_content = preg_replace($pattern, $replace, $file_content);
+
+        // create new file text for obfuscation
+        $pattern = '/^(\s*RewriteCond\s+%{REQUEST_URI})\s+\^(\/\S*wp-admin\s*)$/m';
+        $replace = " # replaced via aqua-hooks deployment script:\n";
+        $replace .= "$1 ^/".$config['client']."/".$config['project']."$2";
+        $file_content = preg_replace($pattern, $replace, $file_content);
+
+        // reopen file and edit it
+        $file = fopen($htaccess, "w");
+        fwrite($file, "#new:$file_content");
+        fclose($file);
+    // if we can't edit the file then tell someone about it
+    } else {
+        log_status('no .htaccess exists or is unwritable at '.$htaccess);
     }
 }

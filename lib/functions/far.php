@@ -13,7 +13,7 @@
 \*------------------------------------*/
 
 // if all the values were received from shell
-if($argv[8] == '' && ($argv[1] != '' && $argv[2] != '' && $argv[3] != '' && $argv[4] != '' && $argv[5] != '' && $argv[6] != '' && $argv[7] != '')){
+if(empty($argv[8]) && ($argv[1] != '' && $argv[2] != '' && $argv[3] != '' && $argv[4] != '' && $argv[5] != '' && $argv[6] != '' && $argv[7] != '')){
 
     // put the values in an array
     $wp_config_array = array(

@@ -27,11 +27,6 @@ function db_create($db_creds){
             log_status('database '.$db_creds['name'].' does not exist', 'NOTE');
             mysql_query('CREATE DATABASE IF NOT EXISTS '.$db_creds['name'], $link);
             log_status('ran create database '.$db_creds['name'], 'NOTE');
-// mysql_query('GRANT USAGE ON *.* TO '. $config['mysql_user'].'@localhost IDENTIFIED BY \''.$config['mysql_pass'].'\'', $link);
-// mysql_query('GRANT ALL PRIVILEGES ON '.$db_creds['name'].'.* TO '.$config['mysql_user'].'@localhost', $link);
-// log_status('created user '.$config['mysql_user'].' with privaleges for '.$db_creds['name']);
-// mysql_query('FLUSH PRIVILEGES', $link);
-// log_status('privileges flushed');
         } else {
             log_status('database already exists', 'SUCCESS');
             mysql_close($link);
@@ -152,7 +147,7 @@ function wp_home_url($db_creds){
             // close connection to mysql
             mysql_close($link);
             // reopen a connection with just this database selected
-            $mysqli = @new mysqli($config['mysql_host'], $config['mysql_user'], $config['mysql_pass'], $db_creds['name']);
+            $mysqli = @new mysqli($db_creds['host'], $db_creds['user'], $db_creds['pass'], $db_creds['name']);
             if ($mysqli->connect_errno) {
                 log_status('failed to connect to mysql with root user: (' . $mysqli->connect_errno . ') ' . $mysqli->connect_error, 'WARNING');
             } else {

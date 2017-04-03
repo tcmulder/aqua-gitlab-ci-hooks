@@ -40,9 +40,6 @@ function wp_db_creds($dir_proj, $server){
     log_status('project directory is '.$dir_proj, 'NOTE');
     // variable to store wordpress database credentials
     $wp_db_creds = null;
-    // set up the db prefix
-    $db_prefix = $server . '_';
-    log_status('database prefix is '.$db_prefix, 'NOTE');
     // if there's a wp-config.php file then grab it's contents
     $wp_file = $config['config_path'];
     if(file_exists($wp_file) && is_file($wp_file) && is_readable($wp_file)) {
@@ -74,7 +71,13 @@ function wp_db_creds($dir_proj, $server){
                 }
             }
             // create an array of the db constants
-            $wp_db_creds = array('name' => $this_name, 'user' => $this_user, 'pass' => $this_pass, 'host' => $this_host, 'char' => $this_char);
+            $wp_db_creds = array(
+                'name' => $this_name,
+                'user' => $this_user,
+                'pass' => $this_pass,
+                'host' => $this_host,
+                'char' => $this_char,
+            );
             // add the db prefix to the array
             preg_match_all('/\$table_prefix\s+= \'(.+)\'/', $file_content, $db_prefix);
             $wp_db_creds['prefix'] = $db_prefix[1][0];
@@ -83,8 +86,13 @@ function wp_db_creds($dir_proj, $server){
             if($home_url){
                 $wp_db_creds['home_url'] = $home_url;
             }
-            log_status('resulting creds: ', 'NOTE');
-            log_status(flatten_db_creds($wp_db_creds), 'NOTE');
+            log_status('creds found: ' . flatten_db_creds($wp_db_creds), 'NOTE');
+            // update to creds for this server
+            $wp_db_creds['name'] = (strtolower(str_replace('-', '_', $server."_".$config['client']."_".$config['project'])));
+            $wp_db_creds['user'] = $config['mysql_user'];
+            $wp_db_creds['pass'] = $config['mysql_pass'];
+            $wp_db_creds['host'] = $config['mysql_host'];
+            log_status('updated creds: '.flatten_db_creds($wp_db_creds), 'NOTE');
         }
         // if all credentials were generated
         if(count($wp_db_creds) == 7){
@@ -182,7 +190,7 @@ function wp_htaccess_update($dir_proj){
 }
 
 // update wp-config.php values to this server
-function wp_update_config($dir_proj, $server){
+function wp_update_config($dir_proj, $server, $wp_db_creds){
     global $config;
     log_status('wp_update_config called', 'TITLE');
     // identify the file
@@ -206,19 +214,19 @@ function wp_update_config($dir_proj, $server){
             $replacements = array(
                 'db_name' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_NAME)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('"."$2"."', '".(strtolower(str_replace('-', '_', $server."_".$config['client']."_".$config['project'])))."');",
+                    'replace'      => "define('"."$2"."', '".$wp_db_creds['name']."');",
                 ),
                 'db_user' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_USER)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$config['mysql_user']."');",
+                    'replace'      => "define('$2', '".$wp_db_creds['user']."');",
                 ),
                 'db_password' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_PASSWORD)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$config['mysql_pass']."');",
+                    'replace'      => "define('$2', '".$wp_db_creds['pass']."');",
                 ),
                 'db_host' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_HOST)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$config['mysql_host']."');",
+                    'replace'      => "define('$2', '".$wp_db_creds['host']."');",
                 ),
             );
 

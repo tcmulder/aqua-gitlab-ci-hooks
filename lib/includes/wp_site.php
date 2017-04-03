@@ -22,11 +22,12 @@ if('wordpress' == $proj_type){
 
     // update the .htaccess file for new path
     wp_htaccess_update($dir_proj);
-    // update the wp-config.php with new database values
-    wp_update_config($dir_proj, $server);
-    // stand up the wordpress database from mysqldump
+    // if there are wp database credentials
     if($wp_db_creds){
         log_status('database credentials exist', 'SUCCESS');
+        // stand up the database
         wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj);
+        // update the wp-config.php with this server's database values
+        wp_update_config($dir_proj, $server, $wp_db_creds);
     }
 }

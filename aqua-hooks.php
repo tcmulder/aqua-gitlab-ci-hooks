@@ -149,7 +149,7 @@ try {
         include_once 'lib/includes/init_repo.php';
         // update the branch
         include_once 'lib/includes/update_repo.php';
-        // try to handle wp sites
+        // try to handle wp sites if this is one
         include_once 'lib/includes/wp_site.php';
 
         // run garbage collection to keep the repository size manageable

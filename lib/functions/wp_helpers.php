@@ -10,6 +10,29 @@
 // exit if visited in browser or no arguments passed
 if(!isset($argv)) exit;
 
+// find wp-config.php file
+function wp_find_config($dir_proj){
+    global $config;
+    // set location of the wp-config.php file
+    $wp_file = $dir_proj . $config['config_file'];
+    // determine if the file exists at root or in a subdirectory
+    if(!file_exists($wp_file)){
+        $dir_search = escapeshellcmd($dir_proj);
+        $wp_file = trim(shell_exec('find '.$dir_search.' -name '.$config['config_file'].' -print -quit')); // may need to use -exit instead of -quit for NetBSD
+        if($wp_file){
+            log_status('config found at '.$wp_file, 'SUCCESS');
+            return $wp_file;
+        }
+    // return file path if it's at root
+    } else {
+        log_status('config found at '.$wp_file, 'SUCCESS');
+        return $wp_file;
+    }
+    // return false if the file can't be found
+    log_status('config found at '.$wp_file, 'WARNING');
+    return false;
+}
+
 // return db creds from wp-config.php
 function wp_db_creds($dir_proj, $server){
     global $config;
@@ -20,53 +43,29 @@ function wp_db_creds($dir_proj, $server){
     // set up the db prefix
     $db_prefix = $server . '_';
     log_status('database prefix is '.$db_prefix, 'NOTE');
-    // set location of the wp-config.php file
-    $wp_file = $dir_proj . $config['config_file'];
-    if(!file_exists($wp_file)){
-        $dir_search = escapeshellcmd($dir_proj);
-        $wp_file = trim(shell_exec('find '.$dir_search.' -name '.$config['config_file'].' -print -quit')); // may need to use -exit instead of -quit for NetBSD
-    }
     // if there's a wp-config.php file then grab it's contents
+    $wp_file = $config['config_path'];
     if(file_exists($wp_file) && is_file($wp_file) && is_readable($wp_file)) {
         log_status('file found '.$wp_file, 'SUCCESS');
         $file = @fopen($wp_file, 'r');
         $file_content = fread($file, filesize($wp_file));
         @fclose($file);
-
-        // // get wp defined project name if available
-        // preg_match_all('/\$proj_name\s+=\s+\'(.+)\'/', $file_content, $wp_proj_name_matches);
-        // $wp_proj_name = (!empty($wp_proj_name_matches[1][0]) ? $wp_proj_name_matches[1][0] : false);
-
-        // // get wp defined password if available
-        // preg_match_all('/\$db_pass\s+=\s+\'(.+)\'/', $file_content, $wp_db_pass_matches);
-        // $wp_db_pass = (!empty($wp_db_pass_matches[1][0]) ? $wp_db_pass_matches[1][0] : false);
-
         //  match the db credentials
         preg_match_all('/define\s*?\(\s*?([\'"])(DB_NAME|DB_USER|DB_PASSWORD|DB_HOST|DB_CHARSET)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si', $file_content, $defines);
-// log_status('defines is '.print_r($defines,1));
-        // make sure everything got grabbed
         if((isset($defines[2]) && ! empty($defines[2])) && (isset($defines[4]) && ! empty($defines[4]))) {
-// log_status('did find stuff');
+
             // for each matched set of elements
             foreach($defines[2] as $key => $define) {
                 switch($define) {
                     // start grabbing db creds
                     case 'DB_NAME':
-                        // if(strstr($defines[4][$key], $db_prefix)){
-                            $this_name = $defines[4][$key];
-// if this wasn't customized then replace variable name
-// $this_name = str_replace('$proj_name', $wp_proj_name, $this_name);
-                            $key++;
-                            $this_user = $defines[4][$key];
-// // if this wasn't customized then replace variable name
-// $this_user = str_replace('$proj_name', $wp_proj_name, $this_user);
-                            $key++;
-                            $this_pass = $defines[4][$key];
-// // if this wasn't customized then replace variable name
-// $this_pass = str_replace('$db_pass', $wp_db_pass, $this_pass);
-                            $key++;
-                            $this_host = $defines[4][$key];
-                        // }
+                        $this_name = $defines[4][$key];
+                        $key++;
+                        $this_user = $defines[4][$key];
+                        $key++;
+                        $this_pass = $defines[4][$key];
+                        $key++;
+                        $this_host = $defines[4][$key];
                         break;
                     // when we reach the end of what we're interested in
                     case 'DB_CHARSET':
@@ -74,7 +73,6 @@ function wp_db_creds($dir_proj, $server){
                         break;
                 }
             }
-
             // create an array of the db constants
             $wp_db_creds = array('name' => $this_name, 'user' => $this_user, 'pass' => $this_pass, 'host' => $this_host, 'char' => $this_char);
             // add the db prefix to the array
@@ -128,12 +126,12 @@ function wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj){
 
 // update .htaccess path
 function wp_htaccess_update($dir_proj){
+    global $config;
     log_status('wp_htaccess_update called', 'TITLE');
     // find the file
     $htaccess = $dir_proj.'.htaccess';
-    // if it's there and we can edit it
+    // if it's there and we can read it
     if(file_exists($htaccess) && is_file($htaccess) && is_writable($htaccess)){
-        global $config;
         log_status('root .htaccess exists at '.$htaccess, 'SUCCESS');
         // open up the file and copy contents
         $file = fopen($htaccess, "r");
@@ -141,7 +139,7 @@ function wp_htaccess_update($dir_proj){
         fclose($file);
 
         // make a backup copy of the .htaccess file
-        $backup_file =
+        $backup_file = $htaccess.'_aqua-hooks-backup';
         $backup_success = copy($htaccess, $backup_file);
 
         // if backup was successful
@@ -166,12 +164,14 @@ function wp_htaccess_update($dir_proj){
 
             // reopen file and edit it
             $file = fopen($htaccess, "w");
-            fwrite($file, "#new:$file_content");
+            fwrite($file, "$file_content");
             fclose($file);
+
+            log_status('attempted to update .htaccess to server paths', 'SUCCESS');
 
         // error if can't create backup
         } else {
-            // throw new Exception("Unable to backup .htaccess file $backup_success");
+            throw new Exception("Unable to backup .htaccess file $backup_success");
         }
 
     // if we can't edit the file then tell someone about it
@@ -182,9 +182,78 @@ function wp_htaccess_update($dir_proj){
 }
 
 // update wp-config.php values to this server
-function wp_update_config($dir_proj){
+function wp_update_config($dir_proj, $server){
+    global $config;
     log_status('wp_update_config called', 'TITLE');
-    log_status("WP UPDATE NOT COMPLETE", "WARNING");
-    log_status("success example", "SUCCESS");
-    // die();
+    // identify the file
+    $wp_file = $config['config_path'];
+    // if it's there and we can read it
+    if(file_exists($wp_file) && is_file($wp_file) && is_writable($wp_file)){
+        log_status('config file exists at '.$wp_file, 'SUCCESS');
+        // open up the file and copy contents
+        $file = fopen($wp_file, "r");
+        $file_content = fread($file, filesize($wp_file));
+        fclose($file);
+
+        // make a backup copy of the file
+        $backup_file = $wp_file.'_aqua-hooks-backup';
+        $backup_success = copy($wp_file, $backup_file);
+
+        // if backup was successful
+        if($backup_success){
+
+            // identify what needs updating
+            $replacements = array(
+                'db_name' => array(
+                    'pattern'      => '/define\s*?\(\s*?([\'"])(DB_NAME)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
+                    'replace'      => "define('"."$2"."', '".(strtolower(str_replace('-', '_', $server."_".$config['client']."_".$config['project'])))."');",
+                ),
+                'db_user' => array(
+                    'pattern'      => '/define\s*?\(\s*?([\'"])(DB_USER)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
+                    'replace'      => "define('$2', '".$config['mysql_user']."');",
+                ),
+                'db_password' => array(
+                    'pattern'      => '/define\s*?\(\s*?([\'"])(DB_PASSWORD)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
+                    'replace'      => "define('$2', '".$config['mysql_pass']."');",
+                ),
+                'db_host' => array(
+                    'pattern'      => '/define\s*?\(\s*?([\'"])(DB_HOST)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
+                    'replace'      => "define('$2', '".$config['mysql_host']."');",
+                ),
+            );
+
+            // apply each update and error if unable to
+            foreach($replacements as $key => $options){
+                $match = preg_match($options['pattern'], $file_content, $defines);
+                if(!empty($defines)){
+                    log_status('match found for replacing '.$defines[2], 'SUCCESS');
+                    $file_content = preg_replace($options['pattern'], $options['replace'], $file_content);
+                } else {
+                    throw new Exception("Unable to replace config value for $key");
+                }
+            }
+
+            // reopen file and edit it
+            $file = fopen($wp_file, "w");
+            fwrite($file, "$file_content");
+            fclose($file);
+            log_status('attempted to update config to server values', 'SUCCESS');
+
+        // error if can't create backup
+        } else {
+            throw new Exception("Unable to backup .htaccess file $backup_success");
+        }
+
+    // if we can't edit the file then tell someone about it
+    } else {
+        log_status('no config exists or is is unwritable at '.$wp_file, 'WARNING');
+        log_status('continuing without config update', 'WARNING');
+    }
+
+
+
+
+
+
+    die();
 }

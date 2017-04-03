@@ -83,10 +83,6 @@ try {
         $server = $branch_base_parts[0];
         log_status('server: '.$server, 'NOTE');
 
-        // $subdomain = explode('.', $_SERVER['HTTP_HOST'])[0];
-        // $server_version = substr($subdomain, -1, 1);
-        // log_status('directory version: '.$server_version);
-
         $dir_base = $config['root_dir'] . $server . '.'. $config['domain'] . $config['sub_dir'];
         log_status('directory base: '.$dir_base, 'NOTE');
 
@@ -135,10 +131,12 @@ try {
         $wp_db_creds = '';
         if('wordpress' == $proj_type){
             log_status('is type wordpress', 'NOTE');
-            // get all the database helper functions
+            // get all the helper functions needed
             include_once 'lib/functions/db_helpers.php';
-            // get the wordpress database credentials
             include_once 'lib/functions/wp_helpers.php';
+            // get the wordpress wp-config.php file path
+            $config['config_path'] = wp_find_config($dir_proj);
+            // get the wordpress database credentials
             $wp_db_creds = wp_db_creds($dir_proj, $server);
         }
 

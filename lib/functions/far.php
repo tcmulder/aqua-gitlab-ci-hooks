@@ -27,7 +27,7 @@ if(empty($argv[8]) && ($argv[1] != '' && $argv[2] != '' && $argv[3] != '' && $ar
     );
 
     // output the values
-    echo "\n\n:: Find and replace called\n";
+    echo "far input values:\n";
     echo " input name......".$wp_config_array['name']."\n";
     echo " input user......".$wp_config_array['user']."\n";
     echo " input pass......".$wp_config_array['pass']."\n";
@@ -348,7 +348,7 @@ class AppDatabaseScrub{
         // Calc the time taken.
         $this->time = array_sum(explode(' ', $this->report[ 'end' ])) - array_sum(explode(' ', $this->report[ 'start' ]));
         printf("\n
-Find and replace ran
+ far result values:
  replaced........%s
  new string......%s
  tables..........%d

@@ -10,11 +10,11 @@
 // exit if visited in browser or no arguments passed
 if(!isset($argv)) exit;
 
-log_status("\n\n:: wp_site included");
+log_status('wp_site included', 'TITLE');
 
 // if this is a wordpress site
 if('wordpress' == $proj_type){
-    log_status('is type wordpress');
+    log_status('is type wordpress', 'NOTE');
 
     // grab all the helpers needed
     include_once 'lib/functions/db_helpers.php';
@@ -26,7 +26,7 @@ if('wordpress' == $proj_type){
     wp_update_config($dir_proj);
     // stand up the wordpress database from mysqldump
     if($wp_db_creds){
-        log_status('database credentials exist');
+        log_status('database credentials exist', 'SUCCESS');
         wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj);
     }
 

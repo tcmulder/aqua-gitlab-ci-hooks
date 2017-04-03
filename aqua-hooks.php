@@ -34,97 +34,41 @@ try {
         ::Set Up Status Logging
     \*------------------------------------*/
 
-    // log status by outputting text into the log
-    function log_status($status){
-        global $config;
-        if('true' == $config['log'] || 'debug' == $config['log']){
-            $file = $dir_root.'debug.log';
-            // extra debug info
-            $extra_debug = '';
-            if('debug' == $config['log']){
-                $bt = debug_backtrace();
-                $caller = array_shift($bt);
-                $debug_file = array_pop(explode('/', $caller['file']));
-                $debug_line = $caller['line'];
-                $extra_debug = str_pad(" [$debug_file:$debug_line] ",22) ;
-            }
-            // write the output to the log
-            file_put_contents($file, $extra_debug."$status\n", FILE_APPEND | LOCK_EX);
-            // truncate the log if it gets too large
-            if($lines = count(file($file)) >= 100000){
-                $truncated = shell_exec("tail -n 1000 $file");
-                file_put_contents($file, $truncated, LOCK_EX);
-            }
-        } else {
-            return false;
-        }
-    }
-    // log status by executing and then outputting text into the log
-    function log_exec($exec){
-        global $config;
-        if('true' == $config['log'] || 'debug' == $config['log']){
-            global $dir_root;
-            $file = $dir_root.'debug.log';
-            // extra debug info
-            $extra_debug = '';
-            if('debug' == $config['log']){
-                $bt = debug_backtrace();
-                $caller = array_shift($bt);
-                $debug_file = array_pop(explode('/', $caller['file']));
-                $debug_line = $caller['line'];
-                $extra_debug = str_pad(" [$debug_file:$debug_line] ",25) ;
-            }
-            // report what was called
-            file_put_contents($file, $extra_debug."called on command line: \n\t$exec\n", FILE_APPEND | LOCK_EX);
-            // execute and capture response
-            exec("$exec 2>&1", $output);
-            $exec_output = str_replace("\n", "\n\t", print_r($output,1));
-            // write the output to the log
-            file_put_contents($file, $extra_debug."prevous command output: \n\t$exec_output\n", FILE_APPEND | LOCK_EX);
-            // truncate the log if it gets too large
-            if($lines = count(file($file)) >= 100000){
-                $truncated = shell_exec("tail -n 1000 $file");
-                file_put_contents($file, $truncated, LOCK_EX);
-            }
-        } else {
-            exec("$exec");
-        }
-    }
-
-    log_status("\n\n\n\naqua-hooks start :::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]");
+    include_once 'lib/functions/log_helpers.php';
+    log_status("aqua-hooks start", 'SEPARATE');
 
     /*------------------------------------*\
         ::Initialize Data
     \*------------------------------------*/
     $parsed_input = str_replace('\"', '"', $argv[1]);
     $gitlab = json_decode($parsed_input); //data from gitlab
-    log_status('raw json: '.$parsed_input);
-    log_status('gitlab data: '.($gitlab ? 'true' : 'false'));
-    log_status('gitlab json: '.print_r($gitlab,1));
+    log_status('raw json: '.$parsed_input, 'NOTE');
+    log_status('gitlab data: '.($gitlab ? 'true' : 'false'), 'NOTE');
+    log_status('gitlab json: '.print_r($gitlab,1), 'NOTE');
     // no need to continue if no data received
     if($gitlab){
 
         // grab all the get data
         $client = (isset($config['client']) ? $config['client'] : false);
         if($client){
-            log_status('client: '.$client);
+            log_status('client: '.$client, 'NOTE');
         } else {
             throw new Exception('$config[\'client\'] does not exist');
         }
         $proj = (isset($config['project']) ? $config['project'] : false);
         if($proj){
-            log_status('project: '.$proj);
+            log_status('project: '.$proj, 'NOTE');
         } else {
             throw new Exception('$config[\'project\'] does not exist');
         }
         $proj_type = (isset($gitlab->type) ? $gitlab->type : false);
         if($proj_type){
-            log_status('project type: '.$proj_type);
+            log_status('project type: '.$proj_type, 'NOTE');
         } else {
-            log_status('no project type defined');
+            log_status('no project type defined', 'NOTE');
         }
         $pull_specific = (isset($config['pull']) ? $config['pull'] : false);
-        log_status('pull specific commit: '.$pull_specific);
+        log_status('pull specific commit: '.$pull_specific, 'NOTE');
 
         // set up necessary variables and report their values
         $branch = null;
@@ -133,18 +77,18 @@ try {
         } else {
             $branch = $pull_specific;
         }
-        log_status('branch: '.$branch);
+        log_status('branch: '.$branch, 'NOTE');
 
         $branch_base_parts = explode('_', $branch);
         $server = $branch_base_parts[0];
-        log_status('server: '.$server);
+        log_status('server: '.$server, 'NOTE');
 
         // $subdomain = explode('.', $_SERVER['HTTP_HOST'])[0];
         // $server_version = substr($subdomain, -1, 1);
         // log_status('directory version: '.$server_version);
 
         $dir_base = $config['root_dir'] . $server . '.'. $config['domain'] . $config['sub_dir'];
-        log_status('directory base: '.$dir_base);
+        log_status('directory base: '.$dir_base, 'NOTE');
 
         // exit if the server (based on branch prefix) doesn't exist
         if(!file_exists($dir_base)){
@@ -153,44 +97,44 @@ try {
 
         // store directory locations and report where they are
         $dir_client = $dir_base . $client . '/';
-        log_status('client directory: '.$dir_client);
+        log_status('client directory: '.$dir_client, 'NOTE');
         $dir_proj = $dir_client . $proj . '/';
-        log_status('project directory: '.$dir_proj);
+        log_status('project directory: '.$dir_proj, 'NOTE');
 
         // identify where the repo can be cloned from
         $repo = $gitlab->repository->url;
-        log_status('repo: '.$repo);
+        log_status('repo: '.$repo, 'NOTE');
 
         // check the commit sha
         $sha_after = $gitlab->after;
         $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj"; // run git commands in working directory
         //compare the current and after sha values
         $sha_cur = substr(shell_exec("$git rev-parse --verify HEAD"), 0, 40);
-        log_status("the current sha is \"$sha_cur\"");
-        log_status("the after sha is \"$sha_after\"");
+        log_status("the current sha is \"$sha_cur\"", 'NOTE');
+        log_status("the after sha is \"$sha_after\"", 'NOTE');
         $sha_identical = ($sha_cur == $sha_after ? true : false);
-        log_status('the current sha and after sha are ' . ($sha_cur == $sha_after ? 'equal' : 'not equal'));
+        log_status('the current sha and after sha are ' . ($sha_cur == $sha_after ? 'equal' : 'not equal'), 'NOTE');
         //check for empty after sha value
         $sha_zero = ($sha_after == '0000000000000000000000000000000000000000' ? true : false);
-        log_status('the after sha ' . ($sha_after == '0000000000000000000000000000000000000000' ? 'is empty' : 'is not empty'));
+        log_status('the after sha ' . ($sha_after == '0000000000000000000000000000000000000000' ? 'is empty' : 'is not empty'), 'NOTE');
 
         // if pull of no specific branch was requested
         if(!$pull_specific){
-            log_status('no specific commit to pull');
+            log_status('no specific commit to pull', 'NOTE');
             // if the current and after commit are the same or the after sha is empty
             if($sha_cur == $sha_after) {
                 throw new Exception('Current and requested commits are identical');
             } elseif($sha_after == '0000000000000000000000000000000000000000'){
                 throw new Exception('The new commit is empty');
             } else {
-                log_status('requested commit is new');
+                log_status('requested commit is new', 'NOTE');
             }
         }
 
         // for wordpress sites set up db creds
         $wp_db_creds = '';
         if('wordpress' == $proj_type){
-            log_status('is type wordpress');
+            log_status('is type wordpress', 'NOTE');
             // get all the database helper functions
             include_once 'lib/functions/db_helpers.php';
             // get the wordpress database credentials
@@ -212,11 +156,11 @@ try {
 
         // run garbage collection to keep the repository size manageable
         $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";
-        log_status('git garbage collection script running');
+        log_status('git garbage collection script running', 'NOTE');
         log_exec("$git gc");
-        log_status('git garbage collection requested');
+        log_status('git garbage collection requested', 'NOTE');
 
-        log_status("\naqua-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
+        log_status("aqua-hooks end", 'SEPARATE');
     // if data isn't right
     } else {
         // if no data was received from gitlab
@@ -224,6 +168,6 @@ try {
     }
 } catch (Exception $e) {
     //output the log
-    error_log(sprintf("%s >> %s", date('Y-m-d H:i:s'), "\n".$e));
-    log_status("\naqua-hooks end :::::::::::::::::::::::::: [ ".date("Y-m-d H:i:s")." ]\n");
+    error_log(sprintf(colorize("%s >> %s", 'FAILURE'), date('Y-m-d H:i:s'), "\n".$e));
+    log_status("aqua-hooks end", 'SEPARATE');
 }

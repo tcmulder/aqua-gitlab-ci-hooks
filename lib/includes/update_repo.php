@@ -10,10 +10,10 @@
 // exit if visited in browser or no arguments passed
 if(!isset($argv)) exit;
 
-log_status("\n\n:: update_repo included");
+log_status('update_repo included', 'TITLE');
 // ensure this is a git project
 if(file_exists($dir_proj . '.git')){
-    log_status('git repo found in '.$dir_proj);
+    log_status('git repo found in '.$dir_proj, 'SUCCESS');
     // run git commands in working directory
     $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";
     // get the current status
@@ -22,13 +22,13 @@ if(file_exists($dir_proj . '.git')){
     // create a dated branch name to use for automated commit save
     $prefixed_branch = 'gitlab_autosave_at_'.date(date('Y_m_d_H_i_s'));
     // report the dated branch name
-    log_status('automated branch name is '.$prefixed_branch);
+    log_status('automated branch name is '.$prefixed_branch, 'NOTE');
     // create the dated branch name and check it out
     log_exec("$git branch $prefixed_branch");
     log_exec("$git checkout $prefixed_branch");
     // for wordpress sites
     if($proj_type == 'wp'){
-        log_status('is type wordpress');
+        log_status('is type wordpress', 'NOTE');
         // include the database scripts
         include_once 'lib/functions/db_helpers.php';
         // dump the database for the automated commit
@@ -39,11 +39,11 @@ if(file_exists($dir_proj . '.git')){
     // create an automated commit on the dated branch
     log_exec("$git commit -m 'Automate commit to save working directory'");
     // report the task that was just requested
-    log_status('requested automated commit');
+    log_status('requested automated commit', 'NOTE');
 
     // get current branches to facilitate old automated commit cleanup
     exec("$git branch", $branches_array);
-    log_status('branches array is ' . print_r($branches_array,1));
+    log_status('branches array is ' . print_r($branches_array,1), 'NOTE');
     // collect the auto saved branches
     $branches_autosaved = Array();
     foreach ($branches_array as $branch_name){
@@ -54,20 +54,20 @@ if(file_exists($dir_proj . '.git')){
     // delete any auto saves more than 5
     if(count($branches_autosaved) > 5){
         $branches_to_delete = array_slice($branches_autosaved, 0, (count($branches_autosaved) - 5));
-        log_status('deleting all but last 5 automated saves');
+        log_status('deleting all but last 5 automated saves', 'WARNING');
         foreach ($branches_to_delete as $branch_name){
             log_exec("$git branch -D $branch_name");
         }
         // get current branches
         $branches_array = Array();
         exec("$git branch", $branches_array);
-        log_status('branches array is now ' . print_r($branches_array,1));
+        log_status('branches array is now ' . print_r($branches_array,1), 'NOTE');
     } else {
-        log_status('too few automated commits to delete any');
+        log_status('too few automated commits to delete any', 'NOTE');
     }
 
     // fetch the new changes
-    log_status('fetch new commit script running');
+    log_status('fetch new commit script running', 'NOTE');
     // create the gitlab_preview branch (doesn't to do so if it exists already)
     log_exec("$git branch gitlab_preview");
     // checkout the gitlab_preview branch (even if it is already)
@@ -78,7 +78,7 @@ if(file_exists($dir_proj . '.git')){
     log_exec("$git fetch -f --depth=1 gitlab $branch:refs/remotes/gitlab/$branch");
     // reset hard to the branch: no need to preserve history in the gitlab_preview
     log_exec("$git reset --hard gitlab/$branch");
-    log_status('reset hard requested on gitlab_preview branch');
+    log_status('reset hard requested on gitlab_preview branch', 'NOTE');
 
 // if the .git directory can't be found in the project
 } else {

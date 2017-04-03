@@ -17,23 +17,23 @@ function db_create(){
     log_status('database credentials received', 'SUCCESS');
     log_status('they are '.flatten_db_creds($config['wp_db_creds'],1));
     // connect to mysql
-    $link = mysql_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
+    $link = mysqli_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
     if($link) {
         log_status('connected to mysql as root', 'NOTE');
         // create the database
-        $db = mysql_select_db($config['wp_db_creds']['name'], $link);
+        $db = mysqli_select_db($config['wp_db_creds']['name'], $link);
         // if the database doesn't exist already
         if (!$db) {
             log_status('database '.$config['wp_db_creds']['name'].' does not exist', 'NOTE');
-            mysql_query('CREATE DATABASE IF NOT EXISTS '.$config['wp_db_creds']['name'], $link);
+            mysqli_query('CREATE DATABASE IF NOT EXISTS '.$config['wp_db_creds']['name'], $link);
             log_status('ran create database '.$config['wp_db_creds']['name'], 'NOTE');
         } else {
             log_status('database already exists', 'SUCCESS');
-            mysql_close($link);
+            mysqli_close($link);
             return false;
         }
     }
-    mysql_close($link);
+    mysqli_close($link);
 }
 
 // export (mysqldump) a database
@@ -136,17 +136,17 @@ function wp_home_url(){
     log_status('they are '.flatten_db_creds($config['wp_db_creds'],1));
 
     // connect as the admin mysql user
-    $link = mysql_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
+    $link = mysqli_connect('localhost', $config['mysql_user'], $config['mysql_pass']);
     // if the connection succeeded
     if($link) {
         log_status('connected to mysql as root user', 'SUCCESS');
         // see if the database exists
-        $db = mysql_select_db($config['wp_db_creds']['name'], $link);
+        $db = mysqli_select_db($config['wp_db_creds']['name'], $link);
         // if the database exists
         if($db) {
             log_status('database '.$config['wp_db_creds']['name'].' found', 'SUCCESS');
             // close connection to mysql
-            mysql_close($link);
+            mysqli_close($link);
             // reopen a connection with just this database selected
             $mysqli = @new mysqli($config['wp_db_creds']['host'], $config['wp_db_creds']['user'], $config['wp_db_creds']['pass'], $config['wp_db_creds']['name']);
             if ($mysqli->connect_errno) {
@@ -172,11 +172,11 @@ function wp_home_url(){
         }
     // if the connection failed
     } else {
-        mysql_close($link);
+        mysqli_close($link);
         log_status('connection failed as root user', 'WARNING');
         return false;
     }
-    mysql_close($link);
+    mysqli_close($link);
 }
 
 // flatten db creds for log output

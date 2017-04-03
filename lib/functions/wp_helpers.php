@@ -11,13 +11,13 @@
 if(!isset($argv)) exit;
 
 // find wp-config.php file
-function wp_find_config($dir_proj){
+function wp_find_config(){
     global $config;
     // set location of the wp-config.php file
-    $wp_file = $dir_proj . $config['config_file'];
+    $wp_file = $config['dir_project'] . $config['config_file'];
     // determine if the file exists at root or in a subdirectory
     if(!file_exists($wp_file)){
-        $dir_search = escapeshellcmd($dir_proj);
+        $dir_search = escapeshellcmd($config['dir_project']);
         $wp_file = trim(shell_exec('find '.$dir_search.' -name '.$config['config_file'].' -print -quit')); // may need to use -exit instead of -quit for NetBSD
         if($wp_file){
             log_status('config found at '.$wp_file, 'SUCCESS');
@@ -34,12 +34,12 @@ function wp_find_config($dir_proj){
 }
 
 // return db creds from wp-config.php
-function wp_db_creds($dir_proj, $server){
+function wp_db_creds(){
     global $config;
     log_status('wp_db_creds called', 'TITLE');
-    log_status('project directory is '.$dir_proj, 'NOTE');
+    log_status('project directory is '.$config['dir_project'], 'NOTE');
     // variable to store wordpress database credentials
-    $wp_db_creds = null;
+    $config['wp_db_creds'] = null;
     // if there's a wp-config.php file then grab it's contents
     $wp_file = $config['config_path'];
     if(file_exists($wp_file) && is_file($wp_file) && is_readable($wp_file)) {
@@ -71,7 +71,7 @@ function wp_db_creds($dir_proj, $server){
                 }
             }
             // create an array of the db constants
-            $wp_db_creds = array(
+            $config['wp_db_creds'] = array(
                 'name' => $this_name,
                 'user' => $this_user,
                 'pass' => $this_pass,
@@ -80,30 +80,30 @@ function wp_db_creds($dir_proj, $server){
             );
             // add the db prefix to the array
             preg_match_all('/\$table_prefix\s+= \'(.+)\'/', $file_content, $db_prefix);
-            $wp_db_creds['prefix'] = $db_prefix[1][0];
+            $config['wp_db_creds']['prefix'] = $db_prefix[1][0];
             // set home url
-            $home_url = wp_home_url($wp_db_creds);
+            $home_url = wp_home_url($config['wp_db_creds']);
             if($home_url){
-                $wp_db_creds['home_url'] = $home_url;
+                $config['wp_db_creds']['home_url'] = $home_url;
             }
-            log_status('creds found: ' . flatten_db_creds($wp_db_creds), 'NOTE');
+            log_status('creds found: ' . flatten_db_creds($config['wp_db_creds']), 'NOTE');
             // update to creds for this server
-            $wp_db_creds['name'] = (strtolower(str_replace('-', '_', $server."_".$config['client']."_".$config['project'])));
-            $wp_db_creds['user'] = $config['mysql_user'];
-            $wp_db_creds['pass'] = $config['mysql_pass'];
-            $wp_db_creds['host'] = $config['mysql_host'];
-            log_status('updated creds: '.flatten_db_creds($wp_db_creds), 'NOTE');
+            $config['wp_db_creds']['name'] = (strtolower(str_replace('-', '_', $config['server']."_".$config['client']."_".$config['project'])));
+            $config['wp_db_creds']['user'] = $config['mysql_user'];
+            $config['wp_db_creds']['pass'] = $config['mysql_pass'];
+            $config['wp_db_creds']['host'] = $config['mysql_host'];
+            log_status('updated creds: '.flatten_db_creds($config['wp_db_creds']), 'NOTE');
         }
         // if all credentials were generated
-        if(count($wp_db_creds) == 7){
+        if(count($config['wp_db_creds']) == 7){
             log_status('returned database credentials: ', 'SUCCESS');
-            log_status('they are '.flatten_db_creds($wp_db_creds), 'NOTE');
-            return $wp_db_creds;
+            log_status('they are '.flatten_db_creds($config['wp_db_creds']), 'NOTE');
+            return $config['wp_db_creds'];
         // if most credentials were generated (no home url)
-        } elseif(!isset($wp_db_creds['home_url']) && $wp_db_creds){
+        } elseif(!isset($config['wp_db_creds']['home_url']) && $config['wp_db_creds']){
             log_status('return database credentials without home url', 'WARNING');
-            log_status('credentials are "'.flatten_db_creds($wp_db_creds).'"', 'WARNING');
-            return $wp_db_creds;
+            log_status('credentials are "'.flatten_db_creds($config['wp_db_creds']).'"', 'WARNING');
+            return $config['wp_db_creds'];
         // if the credentials were not generated
         } else {
             log_status('database credentials not generated', 'WARNING');
@@ -115,29 +115,30 @@ function wp_db_creds($dir_proj, $server){
 }
 
 // stand up a wp database
-function wp_db_standup($dir_proj, $wp_db_creds, $server, $client, $proj){
+function wp_db_standup(){
+    global $config;
     log_status('wp_db_standup called', 'TITLE');
     // create a new database (returns false if it's already there and will use existing one)
-    db_create($wp_db_creds);
+    db_create();
     // import the database and store boolean success
-    $import_success = db_import($wp_db_creds, $dir_proj . '.db/', $server, $client, $proj);
+    $import_success = db_import();
     // if the database import reports success
     if($import_success){
         // re-check home url (the first one was for the initial database)
-        $home_url = wp_home_url($wp_db_creds);
-        $wp_db_creds['home_url'] = $home_url;
-        log_status('home url: '.$wp_db_creds['home_url']);
+        $home_url = wp_home_url($config['wp_db_creds']);
+        $config['wp_db_creds']['home_url'] = $home_url;
+        log_status('home url: '.$config['wp_db_creds']['home_url']);
         // find and replace a database
-        db_far($wp_db_creds, $server, $client, $proj);
+        db_far();
     }
 }
 
 // update .htaccess path
-function wp_htaccess_update($dir_proj){
+function wp_htaccess_update(){
     global $config;
     log_status('wp_htaccess_update called', 'TITLE');
     // find the file
-    $htaccess = $dir_proj.'.htaccess';
+    $htaccess = $config['dir_project'].'.htaccess';
     // if it's there and we can read it
     if(file_exists($htaccess) && is_file($htaccess) && is_writable($htaccess)){
         log_status('root .htaccess exists at '.$htaccess, 'SUCCESS');
@@ -190,7 +191,7 @@ function wp_htaccess_update($dir_proj){
 }
 
 // update wp-config.php values to this server
-function wp_update_config($dir_proj, $server, $wp_db_creds){
+function wp_update_config(){
     global $config;
     log_status('wp_update_config called', 'TITLE');
     // identify the file
@@ -214,19 +215,19 @@ function wp_update_config($dir_proj, $server, $wp_db_creds){
             $replacements = array(
                 'db_name' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_NAME)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('"."$2"."', '".$wp_db_creds['name']."');",
+                    'replace'      => "define('"."$2"."', '".$config['wp_db_creds']['name']."');",
                 ),
                 'db_user' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_USER)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$wp_db_creds['user']."');",
+                    'replace'      => "define('$2', '".$config['wp_db_creds']['user']."');",
                 ),
                 'db_password' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_PASSWORD)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$wp_db_creds['pass']."');",
+                    'replace'      => "define('$2', '".$config['wp_db_creds']['pass']."');",
                 ),
                 'db_host' => array(
                     'pattern'      => '/define\s*?\(\s*?([\'"])(DB_HOST)\1\s*?,\s*?([\'"])([^\3]*?)\3\s*?\)\s*?;/si',
-                    'replace'      => "define('$2', '".$wp_db_creds['host']."');",
+                    'replace'      => "define('$2', '".$config['wp_db_creds']['host']."');",
                 ),
             );
 
@@ -257,11 +258,4 @@ function wp_update_config($dir_proj, $server, $wp_db_creds){
         log_status('no config exists or is is unwritable at '.$wp_file, 'WARNING');
         log_status('continuing without config update', 'WARNING');
     }
-
-
-
-
-
-
-    die();
 }

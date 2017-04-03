@@ -70,7 +70,7 @@ function log_exec($exec, $type='NOTE'){
             $exec_output = "\n\t".str_replace("\n", "\n\t", print_r($output,1))."\n";
         // shorten output for empty arrays
         } else {
-            $exec_output = 'Array()';
+            $exec_output = "Array()\n";
         }
         // write the output to the log
         file_put_contents($file, colorize($extra_debug."prevous command output: $exec_output", $type), FILE_APPEND | LOCK_EX);

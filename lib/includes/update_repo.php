@@ -12,10 +12,13 @@ if(!isset($argv)) exit;
 
 log_status('update_repo included', 'TITLE');
 // ensure this is a git project
-if(file_exists($dir_proj . '.git')){
-    log_status('git repo found in '.$dir_proj, 'SUCCESS');
+if(file_exists($config['dir_project'] . '.git')){
+    global $config;
+    log_status('git repo found in '.$config['dir_project'], 'SUCCESS');
     // run git commands in working directory
-    $git = "git --git-dir=$dir_proj.git --work-tree=$dir_proj";
+    $git = $config['git'];
+    // make easier use of the branch name for output
+    $branch = $config['branch'];
     // get the current status
     $status = log_exec("$git status");
 
@@ -27,12 +30,12 @@ if(file_exists($dir_proj . '.git')){
     log_exec("$git branch $prefixed_branch");
     log_exec("$git checkout $prefixed_branch");
     // for wordpress sites
-    if($proj_type == 'wp'){
+    if('wordpress' == $config['project_type']){
         log_status('is type wordpress', 'NOTE');
         // include the database scripts
         include_once 'lib/functions/db_helpers.php';
         // dump the database for the automated commit
-        db_export($wp_db_creds, $dir_proj . '.db/');
+        db_export();
     }
     // add anything not staged for commit
     log_exec("$git add --all .");
@@ -83,5 +86,5 @@ if(file_exists($dir_proj . '.git')){
 // if the .git directory can't be found in the project
 } else {
     // talk about it
-    throw new Exception($dir_proj . '.git could not be found. Is the deployment key added?');
+    throw new Exception($config['dir_project'] . '.git could not be found. Is the deployment key added?');
 }

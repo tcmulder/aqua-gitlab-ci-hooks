@@ -26,7 +26,7 @@ ini_set('error_log', 'debug.log');
 error_reporting(E_ALL & ~(E_WARNING | E_NOTICE | E_DEPRECATED | E_STRICT));
 ignore_user_abort(true);
 date_default_timezone_set($config['timezone']);
-$dir_root = dirname(__FILE__) . '/';
+
 try {
 
 
@@ -85,6 +85,8 @@ try {
         $branch_base_parts = explode('_', $config['branch']);
         $config['server'] = $branch_base_parts[0];
         log_status('server: '.$config['server'], 'NOTE');
+
+        $config['dir_hooks'] = dirname(__FILE__) . '/';
 
         $config['dir_base'] = $config['root_dir'].$config['server'].'.'.$config['domain'].$config['sub_dir'];
         log_status('directory base: '.$config['dir_base'], 'NOTE');

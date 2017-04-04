@@ -96,8 +96,8 @@ function wp_db_creds(){
         }
         // if all credentials were generated
         if(count($config['wp_db_creds']) == 7){
-            log_status('returned database credentials: ', 'SUCCESS');
-            log_status('they are '.flatten_db_creds($config['wp_db_creds']), 'NOTE');
+            log_status('returned all seven database credentials', 'SUCCESS');
+            log_status('database credentials are: '.flatten_db_creds($config['wp_db_creds']), 'NOTE');
             return $config['wp_db_creds'];
         // if most credentials were generated (no home url)
         } elseif(!isset($config['wp_db_creds']['home_url']) && $config['wp_db_creds']){
@@ -125,11 +125,15 @@ function wp_db_standup(){
     // if the database import reports success
     if($import_success){
         // re-check home url (the first one was for the initial database)
-        $home_url = wp_home_url($config['wp_db_creds']);
-        $config['wp_db_creds']['home_url'] = $home_url;
-        log_status('home url: '.$config['wp_db_creds']['home_url']);
-        // find and replace a database
-        db_far();
+        $home_url = wp_home_url();
+        if($home_url){
+            $config['wp_db_creds']['home_url'] = $home_url;
+            log_status('home url: '.$config['wp_db_creds']['home_url']);
+            // find and replace a database
+            db_far();
+        } else {
+            log_status('no home url found: proceeding without database find-and-replace', 'WARNING');
+        }
     }
 }
 

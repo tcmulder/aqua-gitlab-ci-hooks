@@ -32,10 +32,13 @@ if(file_exists($config['dir_project'] . '.git')){
     // for wordpress sites
     if('wordpress' == $config['project_type']){
         log_status('is type wordpress', 'NOTE');
-        // include the database scripts
-        include_once 'lib/functions/db_helpers.php';
-        // dump the database for the automated commit
-        db_export();
+        // dump the database if credentials are available
+        if($config['wp_db_creds']){
+            // include the database scripts
+            include_once 'lib/functions/db_helpers.php';
+            // dump the database for the automated commit
+            db_export();
+        }
     }
     // add anything not staged for commit
     log_exec("$git add --all .");

@@ -56,7 +56,7 @@ if(file_exists($config['dir_base'])){
         log_exec('git commit -m "Initial commit"');
         log_exec('git branch -m gitlab_preview');
         // change back to the root directory
-        chdir($dir_root);
+        chdir($config['root_dir']);
         // report true to signify that initialization took place
         log_status('git init ran', 'NOTE');
         return true;

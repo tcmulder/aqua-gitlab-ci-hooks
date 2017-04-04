@@ -14,7 +14,7 @@ if(!isset($argv)) exit;
 function log_status($status, $type='NOTE'){
     global $config;
     if('true' == $config['log'] || 'debug' == $config['log']){
-        $file = $dir_root.'debug.log';
+        $file = $config['dir_hooks'].'debug.log';
         // extra debug info
         $extra_debug = '';
         if('debug' == $config['log']){
@@ -49,8 +49,7 @@ function log_status($status, $type='NOTE'){
 function log_exec($exec, $type='NOTE'){
     global $config;
     if('true' == $config['log'] || 'debug' == $config['log']){
-        global $dir_root;
-        $file = $dir_root.'debug.log';
+        $file = $config['dir_hooks'].'debug.log';
         // extra debug info
         $extra_debug = '';
         if('debug' == $config['log']){

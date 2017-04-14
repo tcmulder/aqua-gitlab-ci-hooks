@@ -13,7 +13,7 @@ if(!isset($argv)) exit;
 // log status by outputting text into the log
 function log_status($status, $type='NOTE'){
     global $config;
-    if('true' == $config['log'] || 'debug' == $config['log']){
+    if('basic' == $config['log'] || 'debug' == $config['log']){
         $file = $config['dir_hooks'].'debug.log';
         // extra debug info
         $extra_debug = '';
@@ -36,6 +36,7 @@ function log_status($status, $type='NOTE'){
         }
         // write the output to the log
         file_put_contents($file, colorize($start.$extra_debug."$status".$end, $type), FILE_APPEND | LOCK_EX);
+        echo colorize($start.$extra_debug."$status".$end, $type);
         // truncate the log if it gets too large
         if($lines = count(file($file)) >= 100000){
             $truncated = shell_exec("tail -n 1000 $file");
@@ -61,6 +62,7 @@ function log_exec($exec, $type='NOTE'){
         }
         // report what was called
         file_put_contents($file, colorize($extra_debug."called on command line: \n\t$exec\n", $type), FILE_APPEND | LOCK_EX);
+        echo colorize($extra_debug."called on command line: \n\t$exec\n", $type);
         // execute and capture response
         exec("$exec 2>&1", $output);
         // parse response of execution for presentation
@@ -73,6 +75,7 @@ function log_exec($exec, $type='NOTE'){
         }
         // write the output to the log
         file_put_contents($file, colorize($extra_debug."prevous command output: $exec_output", $type), FILE_APPEND | LOCK_EX);
+        echo colorize($extra_debug."prevous command output: $exec_output", $type);
         // truncate the log if it gets too large
         if($lines = count(file($file)) >= 100000){
             $truncated = shell_exec("tail -n 1000 $file");

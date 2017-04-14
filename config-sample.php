@@ -11,6 +11,16 @@
 $config = array(
 
     /*------------------------------------*\
+        ::Project Configuration
+    \*------------------------------------*/
+    // client name (e.g. for parent directory)
+    'client'            => 'CLIENTNAME', // populate dynamically
+    // project name (e.g. for sub directory)
+    'project'           => 'PROJECTNAME', // populate dynamically
+    // project type (assumed to be static unless set to 'wordpress')
+    'project_type'      => 'wordpress', // recommended to populate dynamically
+
+    /*------------------------------------*\
         ::Paths Configuration
     \*------------------------------------*/
     // base url (e.g. www.example.com becomes example.com)
@@ -33,10 +43,18 @@ $config = array(
     /*------------------------------------*\
         ::Git Configuration
     \*------------------------------------*/
+    // branch requested to be pulled in (used also to determine subdomain, database name, etc.)
+    'branch'            => 'dev',// populate dynamically
+    // cloneable url path
+    'repo'              => 'git@gitlab.com:example.git',// populate dynamically
+    // the git sha that will be active after the push (used to ensure before/after sha's don't match)
+    'sha_after'         => 'abcdefgexample',// populate dynamically
     // email for git to commit under
     'user_email'        => 'example@example.com',
     // username for git to commit under
     'user_name'         => 'example@example.com',
+    // a specific branch to pull (usually left empty unless doing something unusual)
+    'pull'              => '',
 
     /*------------------------------------*\
         ::WordPress Configuration
@@ -47,7 +65,7 @@ $config = array(
     /*------------------------------------*\
         ::Debug Configuration
     \*------------------------------------*/
-    // 'debug' for line numbers or 'true' for basic (comment out to turn off)
+    // 'debug' for line numbers or 'basic' for basic (comment out to turn off)
     'log'               => 'debug',
     // timezone for debug logs
     'timezone'          => 'America/Denver',

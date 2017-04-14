@@ -1,0 +1,6 @@
+Deny from all
+
+# order deny,allow
+# deny from all
+# allow from 127.0.0.1
+# allow from YOUR_IP_ADDRESS

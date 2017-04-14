@@ -1,3 +1,4 @@
 .DS_Store
-gitlab/webhook.log
-gitlab/config.php
+debug.log
+config.php
+db.sql

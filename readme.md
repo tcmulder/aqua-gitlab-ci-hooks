@@ -1,4 +1,4 @@
-# aqua-hooks 4.0.0 Server Setup
+# aqua-hooks
 
 ## Description
 The aqua-hooks script enables GitLab, the aquamarine webservers, and local development machines to talk to each other.
@@ -106,7 +106,7 @@ The database will be based on the subdomain, client, and project, like ``dev_cli
 
 The script will also update your .htaccess and wp-config.php files to reflect the new paths, URLs, database credentials, etc. for the subdomain it's launching to.
 
-The aqua-hooks script can work with WordPress sites that are using a subdirectory install (i.e. there are .htaccess and index.php files at root, and a subdirectory containing the rest of the WordPress install). It also works with projects not at root, so if on your local machine the site is housed at http://localhost/sites/in-development/client-name/project-name/current, aqua-hooks will attempt to move everything onto the subdomain at https://dev.example.com/client-name/project-name just like it normally would. Note however that some plugins or other configurations may add paths into files (particularly the .htaccess file) or the database that aqua-hooks doesn't know to update, so be sure to do some testing if your local and server URLs will use different paths like this.
+The aqua-hooks script can work with WordPress sites that are using a subdirectory install (i.e. there are .htaccess and index.php files at root, and a subdirectory containing the rest of the WordPress install). It also works with projects not at root, so if on your local machine the site is housed at ``http://localhost/sites/in-development/client-name/project-name/current``, aqua-hooks will attempt to move everything onto the subdomain at ``https://dev.example.com/client-name/project-name`` just like it normally would. Note however that some plugins or other configurations may add paths into files (particularly the .htaccess file) or the database that aqua-hooks doesn't know to update, so be sure to do some testing if your local and server URLs will use different paths like this.
 
 ### Logging
 You can turn on logging by passing in the ``&log=basic`` query. (Another option is ``&log=debug``, which will include the file name and line number from the aqua-hooks script itself; unless you're working on the aqua-hooks script, this is probably unnecessary.) You can SSH into the server and tail this file for continuous logging like this:
@@ -144,7 +144,7 @@ Sometimes you may want to trigger the pull from GitLab to the webserver without 
 
 ## Changelog
 
-## 4.0.0
+### 4.0.0
 - Major reworking from zen to aqua version.
 - Uses better config.php strategy rather than requiring URL query strings.
 - Works better with GitLab CI.

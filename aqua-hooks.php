@@ -5,7 +5,7 @@
     ----------------------------------
     author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
-    version:    4.0.0
+    version:    4.0.1
 \*------------------------------------*/
 
 // exit if visited in browser or no arguments passed

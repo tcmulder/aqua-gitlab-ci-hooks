@@ -4,7 +4,7 @@
     ----------------------------------
     author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
-    version:    4.0.0
+    version:    4.0.1
 \*------------------------------------*/
 
 // exit if visited in browser or no arguments passed
@@ -85,6 +85,11 @@ if(file_exists($config['dir_project'] . '.git')){
     // reset hard to the branch: no need to preserve history in the gitlab_preview
     log_exec("$git reset --hard gitlab/$branch");
     log_status('reset hard requested on gitlab_preview branch', 'NOTE');
+    // reset ownership/permissions
+    log_status('file permissions/ownership updates requested', 'NOTE');
+    log_exec('sudo find . -type f -exec chmod 664 {} +');
+    log_exec('sudo find . -type d -exec chmod 775 {} +');
+    log_exec('sudo find . -exec chown www-data:www-data {} +');
 
 // if the .git directory can't be found in the project
 } else {

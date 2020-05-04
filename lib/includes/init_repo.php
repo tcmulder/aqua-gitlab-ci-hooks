@@ -4,7 +4,7 @@
     ----------------------------------
     author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
-    version:    4.0.0
+    version:    4.0.1
 \*------------------------------------*/
 
 // exit if visited in browser or no arguments passed
@@ -21,6 +21,8 @@ if(file_exists($config['dir_base'])){
         // create the client directory
         log_status('create client directory '.$config['dir_client'], 'NOTE');
         mkdir($config['dir_client']);
+        chown($config['dir_client'], 'www-data');
+        chgrp($config['dir_client'], 'www-data');
         // report request to create client directory
         log_status('new client directory creation requested', 'NOTE');
     } else {
@@ -33,6 +35,8 @@ if(file_exists($config['dir_base'])){
         // create the proj directory
         log_status('create project directory '.$config['dir_project'], 'NOTE');
         mkdir($config['dir_project']);
+        chown($config['dir_project'], 'www-data');
+        chgrp($config['dir_project'], 'www-data');
         log_status('new project directory creation requested', 'NOTE');
     } else {
         // report that this if statement was skipped

@@ -4,7 +4,7 @@
     ----------------------------------
     author:     Tomas Mulder <dev@thinkaquamarine.com>
     repo:       https://github.com/tcmulder/aqua-gitlab-ci-hooks
-    version:    4.0.0
+    version:    4.0.1
 \*------------------------------------*/
 
 // exit if visited in browser or no arguments passed
@@ -122,7 +122,7 @@ function db_far(){
             log_status('call made to run find and replace', 'NOTE');
 
             // create find and replace command
-            $far =  'php lib/functions/db_far/srdb.cli.php ';
+            $far =  'php '.dirname(__FILE__).'/db_far/srdb.cli.php ';
             $far .= '-h\''.$config['wp_db_creds']['host'].'\' ';
             $far .= '-u\''.$config['wp_db_creds']['user'].'\' ';
             $far .= '-p\''.$config['wp_db_creds']['pass'].'\' ';
@@ -132,7 +132,7 @@ function db_far(){
 
             //execute find and replace
             $output = shell_exec($far);
-            log_status('ran find and replace ran', 'NOTE');
+            log_status('find and replace called', 'NOTE');
             log_status('command was: '.$far);
             log_status('unable to determine success/fail but output was: '.$output);
         // if we do not have all the info

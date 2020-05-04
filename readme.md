@@ -144,6 +144,10 @@ Sometimes you may want to trigger the pull from GitLab to the webserver without 
 
 ## Changelog
 
+### 4.0.1
+- Update permissions for created directories/files.
+- Correct FAR execution path.
+
 ### 4.0.0
 - Major reworking from zen to aqua version.
 - Uses better config.php strategy rather than requiring URL query strings.
